@@ -1,47 +1,23 @@
-### OZ — визуальный и продуктовый дизайнер
+# playground
 
-Одиннадцать лет делал графический дизайн в международных агентствах, теперь ухожу в продуктовый. Здесь — вещи, которые я спроектировал и собрал сам. Все работают прямо в браузере.
+One page with every project, a one-line description and links to the live version and the code.
 
-**Все проекты на одной странице: [oz-the-magician.github.io](https://oz-the-magician.github.io/)**
+Things I make in my spare time. **[oz-the-magician.github.io/playground](https://oz-the-magician.github.io/playground/)**
 
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <a href="https://oz-the-magician.github.io/AI-Product-Risk-Simulator-Decision-Support-System-v3/"><img src="img/ai-risk.webp" alt="AI Risk Simulator"></a>
-      <br><b><a href="https://oz-the-magician.github.io/AI-Product-Risk-Simulator-Decision-Support-System-v3/">AI Risk Simulator</a></b><br>
-      Симулятор решений по безопасности AI-продукта: два набора мер, риск против денег, вклад каждого решения.
-      <br><sub><a href="https://github.com/oz-the-magician/AI-Product-Risk-Simulator-Decision-Support-System-v3">код</a></sub>
-    </td>
-    <td width="50%" valign="top">
-      <a href="https://oz-the-magician.github.io/prompt-constructor/"><img src="img/prompt-constructor.webp" alt="Prompt Constructor"></a>
-      <br><b><a href="https://oz-the-magician.github.io/prompt-constructor/">Prompt Constructor</a></b><br>
-      Конструктор промптов для текста, изображений, видео и кода — с подсказками, что ослабляет промпт.
-      <br><sub><a href="https://github.com/oz-the-magician/prompt-constructor">код</a></sub>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <a href="https://oz-the-magician.github.io/mortgage_calculator/"><img src="img/mortgage.webp" alt="Калькулятор ипотеки"></a>
-      <br><b><a href="https://oz-the-magician.github.io/mortgage_calculator/">Калькулятор ипотеки</a></b><br>
-      Продаёте одну квартиру, покупаете другую: сколько ипотеки нужно и какая доля дохода уйдёт на платёж.
-      <br><sub><a href="https://github.com/oz-the-magician/mortgage_calculator">код</a></sub>
-    </td>
-    <td width="50%" valign="top">
-      <a href="https://oz-the-magician.github.io/blaster-arena/"><img src="img/blaster-arena.webp" alt="Blaster Arena"></a>
-      <br><b><a href="https://oz-the-magician.github.io/blaster-arena/">Blaster Arena</a></b><br>
-      Браузерный 3D-шутер на арене: волны ботов, гигант-босс, 18 видов оружия, разрушаемые стены.
-      <br><sub><a href="https://github.com/oz-the-magician/blaster-arena">код</a></sub>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <a href="https://oz-the-magician.github.io/cosmic-melody/"><img src="img/cosmic-melody.webp" alt="Cosmic Melody"></a>
-      <br><b><a href="https://oz-the-magician.github.io/cosmic-melody/">Cosmic Melody</a></b><br>
-      Превращает дату в минуту музыки по положению Солнца и фазе Луны.
-      <br><sub><a href="https://github.com/oz-the-magician/cosmic-melody">код</a></sub>
-    </td>
-    <td width="50%" valign="top"></td>
-  </tr>
-</table>
+## Add a project
 
-<sub>Visual and product designer. Eleven years of graphic design at international agencies, now moving into product design. Everything above runs in the browser — the full list is at <a href="https://oz-the-magician.github.io/">oz-the-magician.github.io</a>.</sub>
+1. Put a 1200×750 screenshot into `img/` (WebP or JPG).
+2. Copy a block in `projects.js`, fill in the name, the links and the Russian and English text, and pick a group (`tools` or `play`).
+3. Push. GitHub Pages updates the site in about a minute.
+
+## Files
+
+```
+index.html    — page shell
+style.css     — styles, light and dark
+app.js        — renders the list, RU / EN switch
+projects.js   — the list of projects (edit this one)
+img/          — screenshots
+```
+
+No build step, no dependencies. To preview locally: `python3 -m http.server` and open http://localhost:8000.
