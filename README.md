@@ -44,4 +44,4 @@
   </tr>
 </table>
 
-<sub>Visual and product designer in Prague. Eleven years of graphic design at international agencies, now moving into product design. Everything above runs in the browser — the full list is at <a href="https://oz-the-magician.github.io/">oz-the-magician.github.io</a>.</sub>
+<sub>Visual and product designer. Eleven years of graphic design at international agencies, now moving into product design. Everything above runs in the browser — the full list is at <a href="https://oz-the-magician.github.io/">oz-the-magician.github.io</a>.</sub>
