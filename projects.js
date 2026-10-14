@@ -3,6 +3,7 @@
 
 export const GROUPS = [
   { id: 'tools', title: { ru: 'Инструменты', en: 'Tools' } },
+  { id: 'refs',  title: { ru: 'Справочники', en: 'References' } },
   { id: 'play',  title: { ru: 'Игры и эксперименты', en: 'Games and experiments' } }
 ];
 
@@ -51,6 +52,52 @@ export const PROJECTS = [
     made: {
       ru: 'аннуитет и дифференцированный платёж, займы, ссылка на расчёт, печать в PDF',
       en: 'annuity and differentiated payments, extra loans, shareable link, print to PDF'
+    }
+  },
+  {
+    group: 'refs',
+    name: 'Атлас веб-стилей',
+    nameEn: 'Web Style Atlas',
+    img: 'img/web-style-atlas.webp',
+    demo: 'https://oz-the-magician.github.io/web-style-atlas/',
+    code: 'https://github.com/oz-the-magician/web-style-atlas',
+    about: {
+      ru: '44 направления веб-дизайна, от скевоморфизма до Liquid Glass. У каждого живое превью мини-сайта и готовый промпт-фрагмент для генератора сайтов.',
+      en: '44 web design styles, from skeuomorphism to Liquid Glass. Each has a live mini-site preview and a ready prompt fragment for site generators.'
+    },
+    made: {
+      ru: 'один HTML-файл, превью на CSS, поиск и фильтры по семействам',
+      en: 'one HTML file, CSS-drawn previews, search and filters by family'
+    }
+  },
+  {
+    group: 'refs',
+    name: 'Skill Index',
+    img: 'img/skill-index.webp',
+    demo: 'https://oz-the-magician.github.io/claude-skill-index/',
+    code: 'https://github.com/oz-the-magician/claude-skill-index',
+    about: {
+      ru: 'Каталог скиллов Claude, которые я проверил по коду и лицензии и установил. Каждая карточка ведёт в репозиторий автора.',
+      en: 'A catalogue of Claude skills I reviewed for code and licence, then installed. Every card links to the author’s repository.'
+    },
+    made: {
+      ru: 'карточки в YAML, сборка и проверка через GitHub Actions, RU и EN',
+      en: 'YAML cards, built and validated by GitHub Actions, RU and EN'
+    }
+  },
+  {
+    group: 'play',
+    name: 'Roadkick',
+    img: 'img/roadkick.webp',
+    demo: 'https://oz-the-magician.github.io/roadkick/',
+    code: 'https://github.com/oz-the-magician/roadkick',
+    about: {
+      ru: 'Пиксельная мотогонка в духе Road Rash: пять трасс, соперники с характером, пинки, полиция за превышение скорости, прыжки и сальто.',
+      en: 'A pixel-art motorcycle racer in the spirit of Road Rash: five tracks, rivals with character, kicks, police chases for speeding, jumps and flips.'
+    },
+    made: {
+      ru: 'псевдо-3D на canvas, вся графика и чиптюн-музыка генерируются кодом',
+      en: 'pseudo-3D on canvas, all pixel art and the chiptune soundtrack generated in code'
     }
   },
   {
