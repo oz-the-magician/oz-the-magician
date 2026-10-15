@@ -1,43 +1,310 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OZ — playground</title>
-<meta name="description" content="Разные штуки, которые OZ делает в свободное время. Всё работает прямо в браузере.">
-<meta property="og:title" content="OZ — playground">
-<meta property="og:description" content="Инструменты, симуляторы и игры, которые работают прямо в браузере.">
-<meta property="og:image" content="https://oz-the-magician.github.io/playground/img/ai-risk.webp">
-<meta name="theme-color" content="#090C0B">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Jura:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<div class="ambient" aria-hidden="true"><div class="glow glow-a"></div><div class="glow glow-b"></div></div>
+<link href="https://fonts.googleapis.com/css2?family=Jura:wght@500;600&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: full-screen WebGL space; glass chrome floats over it, detail panel slides in from the right. */
+:root{
+  color-scheme:dark;
+  --ground:#05070C; --ink:#E4EAE6; --ink-2:#AEB9C4; --muted:#7F8B98;
+  --glass:rgba(14,18,28,.62); --edge:rgba(255,255,255,.12); --accent:#9FE3CF; --on-accent:#07110D;
+  --display:'Jura','Onest',sans-serif; --text:'Onest',system-ui,sans-serif;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--ground);color:var(--ink);font:400 15px/1.5 var(--text)}
+canvas#gl{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+canvas#gl.drag{cursor:grabbing}
+.top{position:fixed;left:0;right:0;top:0;z-index:2;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:calc(14px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 14px max(16px,env(safe-area-inset-left,0px));pointer-events:none}
+.top>*{pointer-events:auto}
+.mark{font:600 24px/1 var(--display);letter-spacing:.02em;margin-right:6px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip,.seg button{height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--edge);background:var(--glass);color:var(--ink-2);
+  font:500 13px var(--text);cursor:pointer;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:inline-flex;align-items:center;gap:8px;
+  transition:background-color .18s,color .18s,transform .14s}
+.chip:active,.seg button:active{transform:scale(.97)}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.chip[aria-pressed="true"],.seg button[aria-pressed="true"]{background:rgba(255,255,255,.16);color:#fff}
+.seg{display:flex;gap:4px}.view{margin-left:auto;text-decoration:none}
+.hint{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:2;color:var(--muted);font-size:12.5px;pointer-events:none}
+.panel{position:fixed;z-index:3;top:0;right:0;bottom:0;width:min(420px,100%);
+  padding:calc(76px + env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) 28px;
+  background:var(--glass);backdrop-filter:blur(24px) saturate(140%);-webkit-backdrop-filter:blur(24px) saturate(140%);
+  border-left:1px solid var(--edge);box-shadow:inset 1px 0 0 rgba(255,255,255,.06),-30px 0 60px -30px rgba(0,0,0,.8);
+  transform:translateX(105%);transition:transform .42s cubic-bezier(.23,1,.32,1);overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.panel.open{transform:none}
+.panel .cat{font-size:12.5px;color:var(--c);display:flex;align-items:center;gap:8px}
+.panel .cat i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.panel h2{margin:0;font:600 34px/1.05 var(--display);letter-spacing:-.01em;text-wrap:balance}
+.panel img{border-radius:10px;border:1px solid var(--edge);aspect-ratio:16/10;object-fit:cover;width:100%}
+.panel p{margin:0;color:var(--ink-2)}
+.panel .made{color:var(--muted);font-size:13.5px}
+.acts{display:flex;gap:16px;align-items:center;margin-top:6px}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:0 22px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:600;text-decoration:none}
+.quiet{color:var(--ink);text-decoration:none;border-bottom:1px solid rgba(255,255,255,.3)}
+.close{position:absolute;top:calc(20px + env(safe-area-inset-top,0px));right:max(20px,env(safe-area-inset-right,0px));width:40px;height:40px;border-radius:50%;border:1px solid var(--edge);background:transparent;color:var(--ink);cursor:pointer;font-size:0}
+.close::before,.close::after{content:"";position:absolute;left:12px;right:12px;top:19px;height:1.5px;background:currentColor;transform:rotate(45deg)}
+.close::after{transform:rotate(-45deg)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.err{position:fixed;inset:0;display:grid;place-items:center;color:var(--ink-2);padding:24px;text-align:center}
+@media (max-width:640px){.seg{margin-left:0}.panel h2{font-size:28px}}
+</style>
 
+<canvas id="gl" aria-label="Projects floating in 3D space; click a card for details"></canvas>
 <header class="top">
-  <a class="mark" href="./" aria-label="OZ, главная">OZ</a>
-  <nav class="top-nav" aria-label="Настройки и ссылки">
-    <div class="lang" role="group" aria-label="Язык / Language">
-      <button type="button" data-lang="ru" aria-pressed="true">RU</button>
-      <button type="button" data-lang="en" aria-pressed="false">EN</button>
-    </div>
-    <a class="top-link" href="https://github.com/oz-the-magician">GitHub</a>
-  </nav>
+  <span class="mark">OZ</span>
+  <div class="chips" id="chips" role="group" aria-label="Categories"></div>
+  <a class="chip view" href="classic.html">Change view</a>
+  <div class="seg" role="group" aria-label="Language">
+    <button type="button" data-lang="ru" aria-pressed="true">RU</button>
+    <button type="button" data-lang="en" aria-pressed="false">EN</button>
+  </div>
 </header>
+<p class="hint" id="hint"></p>
+<aside class="panel" id="panel" aria-hidden="true">
+  <button type="button" class="close" id="close" aria-label="Close">Close</button>
+  <div class="cat" id="p-cat"><i></i><span></span></div>
+  <h2 id="p-name"></h2>
+  <img id="p-img" alt="">
+  <p id="p-about"></p>
+  <p class="made" id="p-made"></p>
+  <div class="acts"><a class="btn" id="p-open" target="_blank" rel="noopener"></a><a class="quiet" id="p-code" target="_blank" rel="noopener"></a></div>
+</aside>
 
-<main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const PROJECTS = [{"name": "AI Risk Simulator", "img": "img/ai-risk.webp", "demo": "https://oz-the-magician.github.io/AI-Product-Risk-Simulator-Decision-Support-System-v3/", "code": "https://github.com/oz-the-magician/AI-Product-Risk-Simulator-Decision-Support-System-v3", "about": {"ru": "Симулятор решений по безопасности AI-продукта. Соберите два набора мер, сравните, что они делают с риском, пользователями и деньгами, и посмотрите, какое решение сколько дало.", "en": "A decision simulator for AI product safety. Build two sets of measures, compare what they do to risk, users and money, and see how much each decision contributed."}, "made": {"ru": "Monte Carlo, значения Шепли, граница Парето, пошаговый тур", "en": "Monte Carlo, Shapley values, Pareto frontier, guided tour"}, "cat": "eng"}, {"name": "Prompt Constructor", "img": "img/prompt-constructor.webp", "demo": "https://oz-the-magician.github.io/prompt-constructor/", "code": "https://github.com/oz-the-magician/prompt-constructor", "about": {"ru": "Конструктор промптов для текста, изображений, видео и кода. Собирает промпт из блоков и по ходу подсказывает, что его ослабляет: размытые слова, противоречия, отрицания, пропуски.", "en": "A prompt builder for text, image, video and code models. It assembles the prompt from blocks and points out what weakens it as you type: vague words, contradictions, negations, gaps."}, "made": {"ru": "один офлайн-файл, без ИИ, интерфейс на чешском, русском и английском", "en": "one offline file, no AI involved, Czech, Russian and English interface"}, "cat": "eng"}, {"name": "Калькулятор ипотеки", "nameEn": "Mortgage Calculator", "img": "img/mortgage.webp", "demo": "https://oz-the-magician.github.io/mortgage_calculator/", "code": "https://github.com/oz-the-magician/mortgage_calculator", "about": {"ru": "Продаёте одну квартиру и покупаете другую: сколько ипотеки понадобится, каким будет платёж и какая доля дохода на него уйдёт.", "en": "Selling one flat and buying another: how big a mortgage you need, what the payment will be and how much of your income it takes."}, "made": {"ru": "аннуитет и дифференцированный платёж, займы, ссылка на расчёт, печать в PDF", "en": "annuity and differentiated payments, extra loans, shareable link, print to PDF"}, "cat": "eng"}, {"name": "Атлас веб-стилей", "nameEn": "Web Style Atlas", "img": "img/web-style-atlas.webp", "demo": "https://oz-the-magician.github.io/web-style-atlas/", "code": "https://github.com/oz-the-magician/web-style-atlas", "about": {"ru": "44 направления веб-дизайна, от скевоморфизма до Liquid Glass. У каждого живое превью мини-сайта и готовый промпт-фрагмент для генератора сайтов.", "en": "44 web design styles, from skeuomorphism to Liquid Glass. Each has a live mini-site preview and a ready prompt fragment for site generators."}, "made": {"ru": "один HTML-файл, превью на CSS, поиск и фильтры по семействам", "en": "one HTML file, CSS-drawn previews, search and filters by family"}, "cat": "refs"}, {"name": "Skill Index", "img": "img/skill-index.webp", "demo": "https://oz-the-magician.github.io/claude-skill-index/", "code": "https://github.com/oz-the-magician/claude-skill-index", "about": {"ru": "Каталог скиллов Claude, которые я проверил по коду и лицензии и установил. Каждая карточка ведёт в репозиторий автора.", "en": "A catalogue of Claude skills I reviewed for code and licence, then installed. Every card links to the author’s repository."}, "made": {"ru": "карточки в YAML, сборка и проверка через GitHub Actions, RU и EN", "en": "YAML cards, built and validated by GitHub Actions, RU and EN"}, "cat": "refs"}, {"name": "Roadkick", "img": "img/roadkick.webp", "demo": "https://oz-the-magician.github.io/roadkick/", "code": "https://github.com/oz-the-magician/roadkick", "about": {"ru": "Пиксельная мотогонка в духе Road Rash: пять трасс, соперники с характером, пинки, полиция за превышение скорости, прыжки и сальто.", "en": "A pixel-art motorcycle racer in the spirit of Road Rash: five tracks, rivals with character, kicks, police chases for speeding, jumps and flips."}, "made": {"ru": "псевдо-3D на canvas, вся графика и чиптюн-музыка генерируются кодом", "en": "pseudo-3D on canvas, all pixel art and the chiptune soundtrack generated in code"}, "cat": "games"}, {"name": "Blaster Arena", "img": "img/blaster-arena.webp", "demo": "https://oz-the-magician.github.io/blaster-arena/", "code": "https://github.com/oz-the-magician/blaster-arena", "about": {"ru": "Браузерный 3D-шутер на арене: волны ботов, гигант-босс, 18 видов оружия, карточки улучшений и разрушаемые стены. Играется на компьютере и на телефоне.", "en": "A browser 3D arena shooter: waves of bots, a giant boss, 18 weapons, upgrade cards and destructible walls. Plays on desktop and on phones."}, "made": {"ru": "Three.js, процедурные арены, редактор карт", "en": "Three.js, procedural arenas, map editor"}, "cat": "games"}, {"name": "Cosmic Melody", "img": "img/cosmic-melody.webp", "demo": "https://oz-the-magician.github.io/cosmic-melody/", "code": "https://github.com/oz-the-magician/cosmic-melody", "about": {"ru": "Превращает дату в минуту музыки. Положение Солнца и фаза Луны задают лад, темп и гармонию, а играют живые оркестровые сэмплы.", "en": "Turns a date into a minute of music. The position of the Sun and the phase of the Moon set the key, tempo and harmony, played on real orchestral samples."}, "made": {"ru": "Web Audio, астрономические расчёты, четыре ансамбля", "en": "Web Audio, astronomy maths, four ensembles"}, "cat": "sound"}];
+const CATS = [
+  {id:'eng',   ru:'Инженерия',    en:'Engineering', c:'#7FB7FF', pos:[-6.2, 1.8, 0]},
+  {id:'refs',  ru:'Справочники',  en:'References',  c:'#9FE3CF', pos:[ 5.8, 2.6,-2.2]},
+  {id:'games', ru:'Геймдизайн',   en:'Game design', c:'#FFB36B', pos:[-2.6,-3.4, 2.8]},
+  {id:'sound', ru:'Звук',         en:'Sound',       c:'#C9A5FF', pos:[ 4.6,-3.0, 3.2]}
+];
+const T = {
+  ru:{all:'Все',hint:'Мышью можно повернуть пространство, колесо приближает. Нажмите на карточку.',open:'Открыть',code:'Код'},
+  en:{all:'All',hint:'Drag to look around, scroll to zoom. Click a card.',open:'Open',code:'Code'}
+};
+let lang = (()=>{try{const s=localStorage.getItem('oz-lang');if(s==='ru'||s==='en')return s}catch(e){}return /^(ru|uk|be)/i.test(navigator.language||'')?'ru':'en'})();
+let filter = 'all';
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  <div id="projects"></div>
-</main>
+if(!window.THREE){document.body.insertAdjacentHTML('beforeend','<p class="err">3D could not load. / 3D не загрузилось.</p>')}
+else start();
 
-<footer class="foot">
-  <p data-i18n="foot">Список обновляется вместе с проектами. Исходники всех работ — на GitHub.</p>
-</footer>
+function start(){
+const canvas=document.getElementById('gl');
+if(!window.THREE||!(()=>{try{return document.createElement('canvas').getContext('webgl')}catch(e){}})()){location.replace('classic.html');throw new Error('no webgl')}
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputEncoding=THREE.sRGBEncoding;
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x05070c,0.02);
+const camera=new THREE.PerspectiveCamera(48,1,1,120);
 
-<script type="module" src="app.js"></script>
-</body>
-</html>
+/* volumetric dark ground: a big inside-out sphere with layered gradient light */
+const bg=new THREE.Mesh(new THREE.SphereGeometry(90,48,32),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
+  uniforms:{t:{value:0}},
+  vertexShader:'varying vec3 v;void main(){v=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader:`varying vec3 v;uniform float t;
+    float blob(vec3 d,vec3 c,float s){return pow(max(dot(d,normalize(c)),0.),s);}
+    void main(){
+      vec3 col=vec3(.012,.016,.028);
+      col+=vec3(.10,.07,.26)*blob(v,vec3(-.6,.4,-.7+.1*sin(t*.07)),3.);
+      col+=vec3(.02,.15,.18)*blob(v,vec3(.8,-.3,-.4),4.);
+      col+=vec3(.16,.05,.12)*blob(v,vec3(.2,.7,.6),6.);
+      col+=vec3(.05,.08,.18)*blob(v,vec3(-.3,-.8,.5),3.5);
+      col*=.75+.25*(v.y*.5+.5);
+      gl_FragColor=vec4(col,1.);}`
+}));
+scene.add(bg);
+
+/* thin-line grid warped onto a sphere around the viewer */
+(function grid(){
+  const R=40,pts=[],warp=(th,ph)=>R*(1+.06*Math.sin(th*3+ph*2)+.04*Math.cos(ph*5-th));
+  const P=(th,ph)=>{const r=warp(th,ph);return [r*Math.sin(ph)*Math.cos(th),r*Math.cos(ph),r*Math.sin(ph)*Math.sin(th)]};
+  for(let i=1;i<18;i++){const ph=i/18*Math.PI;for(let j=0;j<96;j++){const a=j/96*Math.PI*2,b=(j+1)/96*Math.PI*2;pts.push(...P(a,ph),...P(b,ph))}}
+  for(let i=0;i<36;i++){const th=i/36*Math.PI*2;for(let j=0;j<48;j++){const a=j/48*Math.PI,b=(j+1)/48*Math.PI;pts.push(...P(th,a),...P(th,b))}}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+  const m=new THREE.LineBasicMaterial({color:0x6f86c8,transparent:true,opacity:.16,fog:false,depthWrite:false});
+  const lines=new THREE.LineSegments(g,m);lines.rotation.z=.25;scene.add(lines);window._grid=lines;
+})();
+
+/* dust */
+(function(){const n=600,a=new Float32Array(n*3);for(let i=0;i<n*3;i++)a[i]=(Math.random()-.5)*50;
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(a,3));
+ scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0x9fb3ff,size:.025,transparent:true,opacity:.5})))})();
+
+scene.add(new THREE.AmbientLight(0xffffff,.55));
+const key=new THREE.DirectionalLight(0xffffff,.9);key.position.set(3,5,6);scene.add(key);
+const rim=new THREE.PointLight(0x9fe3cf,.8,30);rim.position.set(-6,-2,4);scene.add(rim);
+
+/* cards: 16:9 face, credit-card-thin body (0.76mm on a 85.6mm card ⇒ thickness ≈ width/112) */
+const W=4.4,H=2.475,D=W*.5/85.6,RAD=W*.03,PAD=0;
+function rr(w,h,rad){const s=new THREE.Shape(),x=-w/2,y=-h/2;s.moveTo(x+rad,y);s.lineTo(x+w-rad,y);s.quadraticCurveTo(x+w,y,x+w,y+rad);s.lineTo(x+w,y+h-rad);s.quadraticCurveTo(x+w,y+h,x+w-rad,y+h);s.lineTo(x+rad,y+h);s.quadraticCurveTo(x,y+h,x,y+h-rad);s.lineTo(x,y+rad);s.quadraticCurveTo(x,y,x+rad,y);return s}
+function plate(w,h,rad){const g=new THREE.ShapeGeometry(rr(w,h,rad),8),p=g.attributes.position,uv=g.attributes.uv;for(let i=0;i<p.count;i++)uv.setXY(i,p.getX(i)/w+.5,p.getY(i)/h+.5);return g}
+const BODY=new THREE.ExtrudeGeometry(rr(W,H,RAD),{depth:D,bevelEnabled:false,curveSegments:8});BODY.translate(0,0,-D/2);
+const IW=W-PAD*2,IH=IW*9/16,IMG=plate(IW,IH,RAD),IY=0;
+const loader=new THREE.TextureLoader();
+const cards=[],labels=[];
+function backTexture(p,cat){const c=document.createElement('canvas');c.width=640;c.height=360;const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,640,360);g.addColorStop(0,'#141a26');g.addColorStop(1,'#0b0f17');x.fillStyle=g;x.fillRect(0,0,640,360);
+  x.fillStyle=cat.c;x.globalAlpha=.9;x.fillRect(40,40,10,10);x.globalAlpha=1;
+  x.fillStyle='#E4EAE6';x.font='600 54px Jura, Onest, sans-serif';x.fillText(lang==='en'&&p.nameEn?p.nameEn:p.name,40,320);
+  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=4;return t}
+function labelSprite(cat){const c=document.createElement('canvas');c.width=512;c.height=96;const x=c.getContext('2d');
+  x.font='600 46px Jura, Onest, sans-serif';x.fillStyle=cat.c;x.textAlign='center';x.fillText(cat[lang].toUpperCase(),256,64);
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));s.scale.set(2.4,.45,1);return s}
+
+PROJECTS.forEach((p,i)=>{
+  const cat=CATS.find(c=>c.id===p.cat);
+  const same=PROJECTS.filter(q=>q.cat===p.cat),k=same.indexOf(p),n=same.length;
+  const front=loader.load(p.img);front.encoding=THREE.sRGBEncoding;front.anisotropy=renderer.capabilities.getMaxAnisotropy();
+  const body=new THREE.MeshBasicMaterial({color:new THREE.Color(cat.c),fog:false});
+  const mesh=new THREE.Mesh(BODY,body);
+  const face=new THREE.Mesh(IMG,new THREE.MeshBasicMaterial({map:front,fog:false,toneMapped:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-4}));face.position.z=D/2+.004;mesh.add(face);
+  const back=new THREE.Mesh(IMG,new THREE.MeshBasicMaterial({map:backTexture(p,cat),fog:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-4}));back.position.z=-D/2-.004;back.rotation.y=Math.PI;mesh.add(back);
+  mesh.userData.mats=[body,face.material,back.material];
+  const ang=(k/n)*Math.PI*2+cat.pos[0];
+  const spread=n>1?2.9:0;
+  mesh.userData={p,cat,home:new THREE.Vector3(cat.pos[0]+Math.cos(ang)*spread,cat.pos[1]+Math.sin(ang)*spread*.75,cat.pos[2]+Math.sin(ang*1.7)*.9),
+    phase:i*1.37,spin:(i%2?1:-1)*(.25+.1*(i%3)),vis:1,mats:mesh.userData.mats};
+  mesh.position.copy(mesh.userData.home);
+  const sheen=new THREE.Mesh(IMG,new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,fog:false,
+    uniforms:{k:{value:0},hot:{value:0},tint:{value:new THREE.Color(cat.c)}},
+    vertexShader:'varying vec2 u;void main(){u=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader:`varying vec2 u;uniform float k,hot;uniform vec3 tint;
+      void main(){float d=u.x*.8+u.y*.6-k;float band=exp(-d*d*28.)*.06;
+        float rim=smoothstep(.0,.035,min(min(u.x,1.-u.x),min(u.y,1.-u.y)));
+        float glow=0.;
+        float vig=(1.-smoothstep(.35,.75,distance(u,vec2(.5))))*.0;
+        gl_FragColor=vec4(tint*band+tint*glow+vig,1.);}`}));
+  sheen.position.z=D/2+.008;sheen.material.polygonOffset=true;sheen.material.polygonOffsetFactor=-4;sheen.material.polygonOffsetUnits=-8;mesh.add(sheen);mesh.userData.sheen=sheen;mesh.userData.off=new THREE.Vector3();mesh.userData.hot=0;
+  scene.add(mesh);cards.push(mesh);
+});
+if(0)CATS.forEach(cat=>{const s=labelSprite(cat);s.position.set(cat.pos[0],cat.pos[1]+(PROJECTS.filter(p=>p.cat===cat.id).length>1?1.65:.85),cat.pos[2]);s.userData.cat=cat;scene.add(s);labels.push(s)});
+
+/* ring: every card on one horizontal circle; the wheel turns it */
+const COLS=3,GX=W+.7,GY=H+.7;const ROWS=Math.ceil((PROJECTS.length+1)/COLS);
+/* folder: sits in the centre cell; filtered-out cards are tucked inside it */
+const MID=Math.floor((ROWS*COLS)/2);
+function slotPos(sl){const c=sl%COLS,rw=Math.floor(sl/COLS);return new THREE.Vector3((c-(COLS-1)/2)*GX,((ROWS-1)/2-rw)*GY,0)}
+function rpoly(pts,rad){const sh=new THREE.Shape(),n=pts.length;
+  for(let i=0;i<n;i++){const p=pts[i],a=pts[(i-1+n)%n],b=pts[(i+1)%n];
+    const da=Math.hypot(a[0]-p[0],a[1]-p[1]),db=Math.hypot(b[0]-p[0],b[1]-p[1]),ra=Math.min(rad,da/2.2),rb=Math.min(rad,db/2.2);
+    const p1=[p[0]+(a[0]-p[0])/da*ra,p[1]+(a[1]-p[1])/da*ra],p2=[p[0]+(b[0]-p[0])/db*rb,p[1]+(b[1]-p[1])/db*rb];
+    i?sh.lineTo(p1[0],p1[1]):sh.moveTo(p1[0],p1[1]);sh.quadraticCurveTo(p[0],p[1],p2[0],p2[1])}
+  return sh}
+const ACC=new THREE.Color('#9FE3CF');
+const folder=new THREE.Group();folder.position.copy(slotPos(MID));scene.add(folder);
+const FW=W*.8,FH=H*.92,x0=-FW/2,x1=FW/2,yb=-FH/2,yt=FH/2-FH*.13,FR=W*.035;
+function wall(shape,col){const g=new THREE.ExtrudeGeometry(shape,{depth:D*1.4,bevelEnabled:false,curveSegments:10});g.translate(0,0,-D*.7);
+  const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:col,fog:false}));
+  const e=new THREE.LineSegments(new THREE.EdgesGeometry(g,25),new THREE.LineBasicMaterial({color:ACC,transparent:true,opacity:.55,fog:false}));m.add(e);m.userData.edge=e;return m}
+const fBack=wall(rpoly([[x0,yb],[x1,yb],[x1,yt],[x0+FW*.47,yt],[x0+FW*.39,FH/2],[x0,FH/2]],FR),0x17202e);fBack.position.z=-.1;folder.add(fBack);
+/* inner glow: neutral theme light living between the walls */
+const fGlow=new THREE.Mesh(new THREE.PlaneGeometry(FW*1.3,FH*1.3),new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,fog:false,
+  uniforms:{a:{value:.25},c:{value:ACC}},vertexShader:'varying vec2 u;void main(){u=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader:'varying vec2 u;uniform float a;uniform vec3 c;void main(){vec2 d=(u-vec2(.5,.42))*vec2(1.,1.5);float g=exp(-dot(d,d)*9.)*smoothstep(.5,.3,max(abs(u.x-.5),abs(u.y-.5)));gl_FragColor=vec4(c*g*a,1.);}'}));
+fGlow.position.z=-.07;folder.add(fGlow);
+const fh=FH*.8;const flapShape=rpoly([[x0,0],[x1,0],[x1+FW*.1,fh],[x0+FW*.6,fh],[x0+FW*.5,fh-FH*.09],[x0+FW*.13,fh-FH*.09]],FR);
+const fFront=wall(flapShape,0x243045);const hinge=new THREE.Group();hinge.position.set(0,yb,.1);hinge.add(fFront);folder.add(hinge);
+let flap=0,folderHot=0,filterAt=0;const RING=0;let ring=0,ringT=0;
+cards.forEach((m,i)=>{m.userData.slot=i/cards.length*Math.PI*2});
+/* camera orbit */
+let BASE=12;
+const ray=new THREE.Raycaster(),m2=new THREE.Vector2();
+const cam={yaw:0,pitch:0,dist:12,gd:12,target:new THREE.Vector3(),gt:new THREE.Vector3()};
+let drag=null,moved=0,idle=0;
+canvas.addEventListener('pointerleave',()=>{hover=null});
+canvas.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};moved=0;canvas.setPointerCapture(e.pointerId);canvas.classList.add('drag')});
+let hover=null,hoverPt=new THREE.Vector3();
+canvas.addEventListener('pointermove',e=>{if(!drag){const r=canvas.getBoundingClientRect();m2.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(m2,camera);const h=ray.intersectObjects(cards.filter(c=>c.userData.vis>.6),false)[0];folderHot=!h&&ray.intersectObject(fBack,false).length?1:0;hover=h?h.object:null;if(h)hoverPt.copy(h.point);canvas.style.cursor=hover?'pointer':'';return}const dx=e.clientX-drag.x,dy=e.clientY-drag.y;moved+=Math.abs(dx)+Math.abs(dy);
+  cam.yaw-=dx*.005;cam.pitch=Math.max(-.9,Math.min(.9,cam.pitch+dy*.004));drag={x:e.clientX,y:e.clientY};idle=0});
+canvas.addEventListener('pointerup',e=>{canvas.classList.remove('drag');const was=drag;drag=null;if(was&&moved<6)pick(e)});
+canvas.addEventListener('wheel',e=>{e.preventDefault();if(e.ctrlKey){cam.gd=Math.max(4,Math.min(BASE*2,cam.gd*(1+e.deltaY*.004)))}else{cam.gd=Math.max(4,Math.min(BASE*2,cam.gd*(1+e.deltaY*.0015)))}idle=0},{passive:false});
+
+let selected=null;
+function pick(e){const r=canvas.getBoundingClientRect();m2.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
+  ray.setFromCamera(m2,camera);const hit=ray.intersectObjects(cards.filter(c=>c.userData.vis>.6),false)[0];hit?select(hit.object):deselect()}
+function front(mesh){}
+function select(mesh){front(mesh);selected=mesh;cam.gt.copy(mesh.userData.home);cam.gd=Math.min(cam.gd,BASE*.55);fillPanel();panel.classList.add('open');panel.setAttribute('aria-hidden','false');document.getElementById('close').focus({preventScroll:true})}
+function deselect(){selected=null;cam.gt.set(0,0,0);cam.gd=Math.max(cam.gd,BASE);panel.classList.remove('open');panel.setAttribute('aria-hidden','true')}
+const panel=document.getElementById('panel');
+document.getElementById('close').onclick=deselect;
+addEventListener('keydown',e=>{if(e.key==='Escape')deselect()});
+function fillPanel(){if(!selected)return;const {p,cat}=selected.userData;
+  panel.style.setProperty('--c',cat.c);
+  document.querySelector('#p-cat span').textContent=cat[lang];
+  document.getElementById('p-name').textContent=lang==='en'&&p.nameEn?p.nameEn:p.name;
+  const im=document.getElementById('p-img');im.src=p.img;
+  document.getElementById('p-about').textContent=p.about[lang];
+  document.getElementById('p-made').textContent=p.made[lang].split(', ').join(' · ');
+  const o=document.getElementById('p-open');o.href=p.demo;o.textContent=T[lang].open;
+  const c=document.getElementById('p-code');c.href=p.code;c.textContent=T[lang].code}
+
+/* chrome */
+function chrome(){document.documentElement.lang=lang;
+  document.getElementById('hint').textContent=T[lang].hint;
+  const chips=document.getElementById('chips');
+  chips.innerHTML=[{id:'all',ru:T.ru.all,en:T.en.all,c:'#E4EAE6'},...CATS].map(c=>`<button type="button" class="chip" data-f="${c.id}" aria-pressed="${filter===c.id}" style="--c:${c.c}">${c.id==='all'?'':'<i></i>'}${c[lang]}</button>`).join('');
+  chips.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{filter=b.dataset.f;filterAt=window._t||0;deselect();
+    const first=cards.find(m=>m.userData.cat.id===filter);if(first)front(first);cam.gt.set(0,0,0);cam.gd=BASE;chrome()});
+  document.querySelectorAll('.seg button').forEach(b=>{b.setAttribute('aria-pressed',b.dataset.lang===lang);b.onclick=()=>{lang=b.dataset.lang;try{localStorage.setItem('oz-lang',lang)}catch(e){}
+    cards.forEach(m=>{m.material[5].map.dispose();m.material[5].map=backTexture(m.userData.p,m.userData.cat);m.material[5].needsUpdate=true});
+    labels.forEach(s=>{const n=labelSprite(s.userData.cat);s.material.map.dispose();s.material.map=n.material.map;s.material.needsUpdate=true});
+    chrome();fillPanel()}});
+}
+chrome();
+
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+  const vf=Math.tan(camera.fov*Math.PI/360),hf=vf*camera.aspect;const span=camera.aspect>1.1?.6:.94;const nb=Math.max((COLS*GX-.7)/2/(hf*span),(ROWS*GY)/2/vf*1.05);
+  if(cam.gd===BASE)cam.gd=nb;BASE=nb}
+addEventListener('resize',resize);resize();
+
+const clock=new THREE.Clock();
+(function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;window._t=t;let transit=false,inside=0;
+  idle+=dt;ring+=(ringT-ring)*Math.min(1,dt*3);
+  cam.dist+=(cam.gd-cam.dist)*Math.min(1,dt*3);cam.target.lerp(cam.gt,Math.min(1,dt*2.5));
+  camera.position.set(cam.target.x+cam.dist*Math.sin(cam.yaw)*Math.cos(cam.pitch),cam.target.y+cam.dist*Math.sin(cam.pitch),cam.target.z+cam.dist*Math.cos(cam.yaw)*Math.cos(cam.pitch));
+  camera.lookAt(cam.target);
+  bg.material.uniforms.t.value=t;if(window._grid&&!reduce)window._grid.rotation.y=t*.01;
+  cards.forEach(m=>{const u=m.userData,on=filter==='all'||u.cat.id===filter;
+    const go=reduce||t-filterAt>cards.indexOf(m)*.045;if(go)u.vis+=((on?1:0)-u.vis)*Math.min(1,dt*(reduce?8:3.2));m.visible=true;
+    const inF=1-u.vis;if(inF>.05&&inF<.95)transit=true;if(inF>.5)inside++;
+    m.scale.setScalar((.42+.58*u.vis)*(1+.05*u.hot));
+    const s=reduce?0:1, isSel=m===selected;
+        const gi=cards.indexOf(m),sl=gi<MID?gi:gi+1;u.home.copy(slotPos(sl));
+    const ord=cards.filter(q=>!(filter==='all'||q.userData.cat.id===filter)).indexOf(m),k=Math.max(0,ord);
+    /* stack slot inside the folder: between the walls, top edge peeking out above the flap */
+    const loc=new THREE.Vector3((k-2)*.22,FH*.22+k*.025,-.055+k*.016).applyQuaternion(folder.quaternion),fp=folder.position.clone().add(loc);
+    const up=folder.position.clone().add(new THREE.Vector3((k-2)*.22,FH*1.15,.45).applyQuaternion(folder.quaternion));
+    const drift=s*u.vis;let tx=u.home.x+drift*Math.sin(t*.35+u.phase)*.18, ty=u.home.y+drift*Math.cos(t*.42+u.phase)*.14, tz=u.home.z+drift*Math.sin(t*.3+u.phase*2)*.2;
+    if(inF>.001){const ez=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;
+      if(inF<.62){const a=ez(inF/.62);tx+=(up.x-tx)*a;ty+=(up.y-ty)*a;tz+=(up.z-tz)*a+s*Math.sin(Math.PI*a)*1.2}
+      else{const a=ez((inF-.62)/.38);tx=up.x+(fp.x-up.x)*a;ty=up.y+(fp.y-up.y)*a;tz=up.z+(fp.z-up.z)*a}}
+    /* magnet: the hovered card leans toward the cursor and the viewer, then springs back */
+    const isHot=m===hover&&!selected;u.hot+=((isHot?1:0)-u.hot)*Math.min(1,dt*6);
+    const want=new THREE.Vector3();
+    if(isHot){want.copy(hoverPt).sub(m.position).multiplyScalar(.28);want.add(camera.position.clone().sub(m.position).normalize().multiplyScalar(.6))}
+    u.off.lerp(want,Math.min(1,dt*(isHot?7:3.5)));
+    m.position.lerp(new THREE.Vector3(tx,ty,tz).add(u.off),inF>.02&&!isHot?1:Math.min(1,dt*(isHot?9:4.5)));
+    u.sheen.material.uniforms.k.value=.7+Math.sin(cam.yaw*1.5+u.phase)*.9+ (isHot?(hoverPt.x-m.position.x)*.2:0);
+    u.sheen.material.uniforms.hot.value=u.hot;
+    const q=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(camera.position,m.position,camera.up));
+    /* tilt: the card turns its face toward the cursor while hovered */
+    if(u.hot>.01){const lp=m.worldToLocal(hoverPt.clone());u.tx=(u.tx||0)+((isHot?lp.x/(W/2):0)-(u.tx||0))*Math.min(1,dt*8);u.ty=(u.ty||0)+((isHot?lp.y/(H/2):0)-(u.ty||0))*Math.min(1,dt*8);
+      q.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-u.ty*.32*u.hot,u.tx*.38*u.hot,0)))}
+    if(!isSel)q.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(s*Math.sin(t*.25+u.phase)*.12,s*Math.sin(t*.2+u.phase)*.18,s*Math.sin(t*.21+u.phase)*.04)));
+    if(inF>.02)q.slerp(folder.quaternion,inF);
+    m.quaternion.slerp(q,Math.min(1,dt*(isSel?4:isHot?8:inF>.02?6:1.2)));
+  });
+  /* folder: faces the viewer, flap opens while cards travel, stays ajar while it holds some */
+  {const fq=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(camera.position,folder.position,camera.up));
+    folder.quaternion.slerp(fq,Math.min(1,dt*1.5));
+    const want=transit?.55:folderHot?.1:0;flap+=(want-flap)*Math.min(1,dt*(want>flap?7:3.5));hinge.rotation.x=flap*(reduce?0:1);
+    fGlow.material.uniforms.a.value+=((.22+(inside?.25:0)+(transit?.35:0)+folderHot*.15)-fGlow.material.uniforms.a.value)*Math.min(1,dt*4);
+    folder.scale.setScalar(1+.03*folderHot)}
+  labels.forEach(s=>{const on=filter==='all'||s.userData.cat.id===filter;s.material.opacity+=((on?1:0)-s.material.opacity)*Math.min(1,dt*4)});
+  renderer.render(scene,camera)})();
+}
+</script>

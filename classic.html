@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OZ — playground</title>
+<meta name="description" content="Разные штуки, которые OZ делает в свободное время. Всё работает прямо в браузере.">
+<meta property="og:title" content="OZ — playground">
+<meta property="og:description" content="Инструменты, симуляторы и игры, которые работают прямо в браузере.">
+<meta property="og:image" content="https://oz-the-magician.github.io/playground/img/ai-risk.webp">
+<meta name="theme-color" content="#090C0B">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Jura:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="ambient" aria-hidden="true"><div class="glow glow-a"></div><div class="glow glow-b"></div></div>
+
+<header class="top">
+  <a class="mark" href="classic.html" aria-label="OZ, главная">OZ</a>
+  <nav class="top-nav" aria-label="Настройки и ссылки">
+    <div class="lang" role="group" aria-label="Язык / Language">
+      <button type="button" data-lang="ru" aria-pressed="true">RU</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+    <a class="top-link" href="./">3D view</a>
+    <a class="top-link" href="https://github.com/oz-the-magician">GitHub</a>
+  </nav>
+</header>
+
+<main>
+
+  <div id="projects"></div>
+</main>
+
+<footer class="foot">
+  <p data-i18n="foot">Список обновляется вместе с проектами. Исходники всех работ — на GitHub.</p>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
