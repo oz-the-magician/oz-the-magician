@@ -1,6 +1,11 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="OZ — playground: проекты в свободное время">
 <title>OZ — playground</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Jura:wght@500;600&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -48,8 +53,18 @@ canvas#gl.drag{cursor:grabbing}
 .close::after{transform:rotate(-45deg)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .err{position:fixed;inset:0;display:grid;place-items:center;color:var(--ink-2);padding:24px;text-align:center}
-@media (max-width:640px){.seg{margin-left:0}.panel h2{font-size:28px}}
+@media (max-width:640px){
+  .top{gap:10px 8px;padding-bottom:8px}
+  .chips{order:9;flex:1 0 100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px;-webkit-mask:linear-gradient(90deg,transparent,#000 16px,#000 calc(100% - 24px),transparent)}
+  .chips::-webkit-scrollbar{display:none}.chip{flex:0 0 auto}
+  .view,.seg button{height:32px;padding:0 12px}
+  .panel{top:auto;left:0;right:0;width:auto;box-sizing:border-box;height:85dvh;border-left:0;border-top:1px solid var(--edge);border-radius:22px 22px 0 0;
+    padding:28px max(20px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));transform:translateY(105%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 -30px 60px -30px rgba(0,0,0,.8)}
+  .panel .close{top:14px}.panel h2{font-size:28px}}
 </style>
+</head>
+<body>
 
 <canvas id="gl" aria-label="Projects floating in 3D space; click a card for details"></canvas>
 <header class="top">
@@ -82,8 +97,8 @@ const CATS = [
   {id:'sound', ru:'Звук',         en:'Sound',       c:'#C9A5FF', pos:[ 4.6,-3.0, 3.2]}
 ];
 const T = {
-  ru:{all:'Все',hint:'Мышью можно повернуть пространство, колесо приближает. Нажмите на карточку.',open:'Открыть',code:'Код'},
-  en:{all:'All',hint:'Drag to look around, scroll to zoom. Click a card.',open:'Open',code:'Code'}
+  ru:{all:'Все',hint:'Мышью можно повернуть пространство, колесо приближает. Нажмите на карточку.',hintT:'Проведите пальцем, чтобы повернуть. Нажмите на карточку.',open:'Открыть',code:'Код'},
+  en:{all:'All',hint:'Drag to look around, scroll to zoom. Click a card.',hintT:'Swipe to look around. Tap a card.',open:'Open',code:'Code'}
 };
 let lang = (()=>{try{const s=localStorage.getItem('oz-lang');if(s==='ru'||s==='en')return s}catch(e){}return /^(ru|uk|be)/i.test(navigator.language||'')?'ru':'en'})();
 let filter = 'all';
@@ -99,7 +114,7 @@ const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputEncoding=THREE.sRGBEncoding;
 const scene=new THREE.Scene();
 scene.fog=new THREE.FogExp2(0x05070c,0.02);
-const camera=new THREE.PerspectiveCamera(48,1,1,120);
+const camera=new THREE.PerspectiveCamera(48,1,1,600);
 
 /* volumetric dark ground: a big inside-out sphere with layered gradient light */
 const bg=new THREE.Mesh(new THREE.SphereGeometry(90,48,32),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
@@ -207,7 +222,7 @@ const fGlow=new THREE.Mesh(new THREE.PlaneGeometry(FW*1.3,FH*1.3),new THREE.Shad
   fragmentShader:'varying vec2 u;uniform float a;uniform vec3 c;void main(){vec2 d=(u-vec2(.5,.42))*vec2(1.,1.5);float g=exp(-dot(d,d)*9.)*smoothstep(.5,.3,max(abs(u.x-.5),abs(u.y-.5)));gl_FragColor=vec4(c*g*a,1.);}'}));
 fGlow.position.z=-.07;folder.add(fGlow);
 const fh=FH*.8;const flapShape=rpoly([[x0,0],[x1,0],[x1+FW*.1,fh],[x0+FW*.6,fh],[x0+FW*.5,fh-FH*.09],[x0+FW*.13,fh-FH*.09]],FR);
-const fFront=wall(flapShape,0x243045);const hinge=new THREE.Group();hinge.position.set(0,yb,.1);hinge.add(fFront);folder.add(hinge);
+const fFront=wall(flapShape,0x243045);const hinge=new THREE.Group();hinge.position.set(0,yb,-.1+D*1.4);hinge.add(fFront);folder.add(hinge);
 let flap=0,folderHot=0,filterAt=0;const RING=0;let ring=0,ringT=0;
 cards.forEach((m,i)=>{m.userData.slot=i/cards.length*Math.PI*2});
 /* camera orbit */
@@ -244,7 +259,7 @@ function fillPanel(){if(!selected)return;const {p,cat}=selected.userData;
 
 /* chrome */
 function chrome(){document.documentElement.lang=lang;
-  document.getElementById('hint').textContent=T[lang].hint;
+  document.getElementById('hint').textContent=matchMedia('(pointer:coarse)').matches?T[lang].hintT:T[lang].hint;
   const chips=document.getElementById('chips');
   chips.innerHTML=[{id:'all',ru:T.ru.all,en:T.en.all,c:'#E4EAE6'},...CATS].map(c=>`<button type="button" class="chip" data-f="${c.id}" aria-pressed="${filter===c.id}" style="--c:${c.c}">${c.id==='all'?'':'<i></i>'}${c[lang]}</button>`).join('');
   chips.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{filter=b.dataset.f;filterAt=window._t||0;deselect();
@@ -258,7 +273,7 @@ chrome();
 
 function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
   const vf=Math.tan(camera.fov*Math.PI/360),hf=vf*camera.aspect;const span=camera.aspect>1.1?.6:.94;const nb=Math.max((COLS*GX-.7)/2/(hf*span),(ROWS*GY)/2/vf*1.05);
-  if(cam.gd===BASE)cam.gd=nb;BASE=nb}
+  if(cam.gd===BASE)cam.gd=nb;BASE=nb;const gs=Math.max(1,nb*1.6/40);if(window._grid)window._grid.scale.setScalar(gs);bg.scale.setScalar(Math.max(1,nb*2.2/90))}
 addEventListener('resize',resize);resize();
 
 const clock=new THREE.Clock();
@@ -301,10 +316,12 @@ const clock=new THREE.Clock();
   /* folder: faces the viewer, flap opens while cards travel, stays ajar while it holds some */
   {const fq=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(camera.position,folder.position,camera.up));
     folder.quaternion.slerp(fq,Math.min(1,dt*1.5));
-    const want=transit?.55:folderHot?.1:0;flap+=(want-flap)*Math.min(1,dt*(want>flap?7:3.5));hinge.rotation.x=flap*(reduce?0:1);
+    const want=transit?1:folderHot?.22:.14;flap+=(want-flap)*Math.min(1,dt*(want>flap?7:3.5));hinge.rotation.x=flap*(reduce?0:1);
     fGlow.material.uniforms.a.value+=((.22+(inside?.25:0)+(transit?.35:0)+folderHot*.15)-fGlow.material.uniforms.a.value)*Math.min(1,dt*4);
     folder.scale.setScalar(1+.03*folderHot)}
   labels.forEach(s=>{const on=filter==='all'||s.userData.cat.id===filter;s.material.opacity+=((on?1:0)-s.material.opacity)*Math.min(1,dt*4)});
   renderer.render(scene,camera)})();
 }
 </script>
+</body>
+</html>
