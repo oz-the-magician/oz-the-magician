@@ -68,7 +68,7 @@ canvas#gl.drag{cursor:grabbing}
 
 <canvas id="gl" aria-label="Projects floating in 3D space; click a card for details"></canvas>
 <header class="top">
-  <span class="mark">OZ</span>
+  <a class="mark" href="./" aria-label="playground"><svg class="tess" viewBox="0 0 64 64" aria-hidden="true"></svg></a>
   <div class="chips" id="chips" role="group" aria-label="Categories"></div>
   <a class="chip view" href="classic.html">Change view</a>
   <div class="seg" role="group" aria-label="Language">
@@ -323,5 +323,6 @@ const clock=new THREE.Clock();
   renderer.render(scene,camera)})();
 }
 </script>
+<script src="mark.js"></script>
 </body>
 </html>
